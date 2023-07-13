@@ -68,11 +68,15 @@ pub fn html2sl(html: &str) -> String {
                     None => write!(sl, "{}.{}()\n", spaces(indent + 1), key)
                         .unwrap(),
                     Some(value) => {
+                        let mut key_str = key.to_string();
+                        if key.eq("async") || key.eq("for") || key.eq("type") {
+                            key_str = String::from("r#") + &key_str;
+                        }
                         write!(
                             sl,
                             "{}.{}(\"{}\")\n",
                             spaces(indent + 1),
-                            key,
+                            key_str,
                             value
                         )
                         .unwrap();
