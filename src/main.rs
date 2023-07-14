@@ -4,7 +4,8 @@ use tl::*;
 
 fn remove_empty_lines(s: &str) -> String {
     let lines = s.lines();
-    let non_empty_lines: Vec<&str> = lines.filter(|line| line.trim().len() > 0).collect();
+    let non_empty_lines: Vec<&str> =
+        lines.filter(|line| line.trim().len() > 0).collect();
     non_empty_lines.join("\n")
 }
 
@@ -24,13 +25,24 @@ pub fn html2sl(html: &str) -> String {
         return "    ".repeat(count).as_str().to_owned();
     }
 
-    fn handle_tag(tag: &HTMLTag, parser: &Parser, sl: &mut String, indent: usize) {
+    fn handle_tag(
+        tag: &HTMLTag,
+        parser: &Parser,
+        sl: &mut String,
+        indent: usize,
+    ) {
         let tag_name = tag.name().as_utf8_str();
         write!(sl, "{}{}()\n", spaces(indent), &tag_name).unwrap();
         let id = tag.attributes().id().map(|x| x.as_utf8_str());
         match &id {
             Some(x) => {
-                write!(sl, "{}.id(\"{}\")\n", spaces(indent + 1), x.to_string()).unwrap();
+                write!(
+                    sl,
+                    "{}.id(\"{}\")\n",
+                    spaces(indent + 1),
+                    x.to_string()
+                )
+                .unwrap();
             }
             None => {}
         }
@@ -53,13 +65,21 @@ pub fn html2sl(html: &str) -> String {
         for (key, value_opt) in tag.attributes().iter() {
             if !(key.eq("class")) && !(key.eq("id")) {
                 match value_opt {
-                    None => write!(sl, "{}.{}()\n", spaces(indent + 1), key).unwrap(),
+                    None => write!(sl, "{}.{}()\n", spaces(indent + 1), key)
+                        .unwrap(),
                     Some(value) => {
                         let mut key_str = key.to_string();
                         if key.eq("async") || key.eq("for") || key.eq("type") {
                             key_str = String::from("r#") + &key_str;
                         }
-                        write!(sl, "{}.{}(\"{}\")\n", spaces(indent + 1), key_str, value).unwrap();
+                        write!(
+                            sl,
+                            "{}.{}(\"{}\")\n",
+                            spaces(indent + 1),
+                            key_str,
+                            value
+                        )
+                        .unwrap();
                     }
                 }
             }
@@ -74,13 +94,18 @@ pub fn html2sl(html: &str) -> String {
         }
     }
 
-    fn handle_node(node_opt: Option<&Node>, parser: &Parser, sl: &mut String, indent: usize) {
+    fn handle_node(
+        node_opt: Option<&Node>,
+        parser: &Parser,
+        sl: &mut String,
+        indent: usize,
+    ) {
         match node_opt {
             None => {}
             Some(node) => match node {
                 Node::Tag(tag) => {
                     write!(sl, "{}.child(\n", spaces(indent)).unwrap();
-                    handle_tag(tag, parser, sl, indent);
+                    handle_tag(tag, parser, sl, indent + 1);
                     write!(sl, "{})\n", spaces(indent)).unwrap();
                 }
                 Node::Comment(_) => {}
@@ -88,7 +113,13 @@ pub fn html2sl(html: &str) -> String {
                     let text = raw.as_utf8_str();
                     let trimmed_text = text.trim();
                     if !trimmed_text.is_empty() {
-                        write!(sl, "{}.child(\"{}\")\n", spaces(indent), trimmed_text).unwrap();
+                        write!(
+                            sl,
+                            "{}.child(\"{}\")\n",
+                            spaces(indent),
+                            trimmed_text
+                        )
+                        .unwrap();
                     }
                 }
             },
@@ -96,7 +127,7 @@ pub fn html2sl(html: &str) -> String {
     }
 
     for node_handle in dom.children() {
-        handle_node(node_handle.get(parser), parser, &mut sl, 1);
+        handle_node(node_handle.get(parser), parser, &mut sl, 0);
     }
 
     let s = remove_empty_lines(&sl);
